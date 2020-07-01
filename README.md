@@ -1,3 +1,6 @@
+# WIP
+This project is WIP and is trying to build a genuine way to make good 3D visualisations of Geospatial data.
+
 # Example
 Making a Plot is as easy as you know it from matplotlib or similiar plotting libraries:
 ```
