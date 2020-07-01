@@ -4,9 +4,9 @@ from direct.gui.OnscreenText import OnscreenText
 from PIL import Image
 import threading
 import numpy as np
-from scipy import interpolate
 from matplotlib import cm
 import shapefile
+
 class EarthPlot(ShowBase):
     def __init__(self,show_poles = False, highres_earth = False, d_light = True, d_light_HPR = (90,0,23.5), d_light_strength = (1,1,1,1), *args,**kwargs):
         ShowBase.__init__(self,*args,**kwargs)
