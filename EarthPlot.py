@@ -6,10 +6,31 @@ import threading
 import numpy as np
 from matplotlib import cm
 import shapefile
+from QPanda3D.Panda3DWorld import Panda3DWorld
+from QPanda3D.QPanda3DWidget import QPanda3DWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtCore    import Qt
+from PyQt5.QtGui import QCursor
+import sys
 
-class EarthPlot(ShowBase):
+class QPanda3DWidget_(QPanda3DWidget):
+    def __init__(self, *args,**kwargs):
+        QPanda3DWidget.__init__(self, *args, **kwargs)
+        self.button1_held = False
+    def mousePressEvent(self,e):
+        if e.button() == Qt.LeftButton:
+            self.button1_held = True
+            self.current_mouse_position = e.pos()
+            print(e.pos()   )
+            print('button pressed')
+    def mouseReleaseEvent(self,e):
+        if e.button() == Qt.LeftButton:
+            self.button1_held = False
+            print('button released')
+
+class EarthPlot(Panda3DWorld):
     def __init__(self,show_poles = False, highres_earth = False, d_light = True, d_light_HPR = (90,0,23.5), d_light_strength = (1,1,1,1), *args,**kwargs):
-        ShowBase.__init__(self,*args,**kwargs)
+        Panda3DWorld.__init__(self,*args,**kwargs)
         self.canvas_width = 900
         self.canvas_height = 900
         self.sphere_size = 100
@@ -21,7 +42,7 @@ class EarthPlot(ShowBase):
         self.drag_id = ''
         self.x_mouse_position = 0
         self.y_mouse_position = 0
-
+        self.qcursor = QCursor()
         self.props = WindowProperties()
         # self.props.setOrigin(100, 100)
         self.props.setSize(int(self.canvas_width), int(self.canvas_height))
@@ -311,26 +332,24 @@ class EarthPlot(ShowBase):
 
     def OrbitCameraTask(self,task):
         delta_factor = .01 * self.camLens.getFov()[1]
-        md = self.win.getPointer(0)
-        props = WindowProperties()
-        if base.mouseWatcherNode.isButtonDown(MouseButton.one()):
-            props.setCursorHidden(True)
-            self.win.requestProperties(props)
-            x = md.getX()
-            y = md.getY()
-            if self.win.movePointer(0, int(self.x_mouse_position), int(self.y_mouse_position)):
-                self.heading = self.heading - (x - self.x_mouse_position) * delta_factor
-                self.pitch = self.pitch - (y - self.y_mouse_position) * delta_factor
+        # md = self.win.getPointer(0)
+        mouse = self.qcursor.pos()
+        x = mouse.x()
+        y = mouse.y()
+        if self.parent.button1_held:
+            self.parent.setCursor(Qt.BlankCursor)
+            self.qcursor.setPos(self.x_mouse_position, self.y_mouse_position)
+            self.heading = self.heading - (x - self.x_mouse_position) * delta_factor
+            self.pitch = self.pitch - (y - self.y_mouse_position) * delta_factor
             if self.pitch > 90:
                 self.pitch = 90
             elif self.pitch <-90:
                 self.pitch = -90
             self.parentnode.setHpr(self.heading, self.pitch,0)
         else:
-            props.setCursorHidden(False)
-            self.win.requestProperties(props)
-            self.x_mouse_position = md.getX()
-            self.y_mouse_position = md.getY()
+            self.parent.setCursor(Qt.ArrowCursor)
+            self.x_mouse_position = x
+            self.y_mouse_position = y
         return task.cont
 
     def plot_shape(self,shape, **args):
@@ -365,7 +384,17 @@ class EarthPlot(ShowBase):
 
 
 if __name__ == '__main__':
-    plot = EarthPlot(d_light_strength = (.3,.3,.3,1))
+    # plot = EarthPlot(d_light_strength = (.3,.3,.3,1))
+    # datasize = 10000
+    # lons2 = np.linspace(0,40,50)
+    # lats2 = lons2
+    # lons = np.concatenate(((np.random.randn(datasize)-.5)*10 , (np.random.randn(datasize)-.5)*10 + np.random.rand(1)*80))
+    # lats = np.concatenate(((np.random.randn(datasize)-.5)*10 , (np.random.randn(datasize)-.5)*10 + np.random.rand(1)*80))
+    # plot.plot_heatmap(lons,lats, n_bins = 200, texture_filter = 'linear', alpha = .7, mpl_cm = 'jet')
+    # plot.add_coastline(res = '50m', color =[0,0,0], linewidth = 2, shading = 'None')
+    # plot.plot_geodetic(-170,0, 170,0, color = [1,0,0])
+    # plot.show()
+    plot = EarthPlot()
     datasize = 10000
     lons2 = np.linspace(0,40,50)
     lats2 = lons2
@@ -373,4 +402,14 @@ if __name__ == '__main__':
     lats = np.concatenate(((np.random.randn(datasize)-.5)*10 , (np.random.randn(datasize)-.5)*10 + np.random.rand(1)*80))
     plot.plot_heatmap(lons,lats, n_bins = 200, texture_filter = 'linear', alpha = .7, mpl_cm = 'jet')
     plot.add_coastline(res = '50m', color =[0,0,0], linewidth = 2, shading = 'None')
-    plot.show()
+    plot.plot_geodetic(-170,0, 170,0, color = [1,0,0])
+    app = QApplication(sys.argv)
+    appw = QMainWindow()
+    appw.setGeometry(50, 50, 800, 600)
+
+    pandaWidget = QPanda3DWidget_(plot)
+
+    appw.setCentralWidget(pandaWidget)
+    appw.show()
+
+    sys.exit(app.exec_())
