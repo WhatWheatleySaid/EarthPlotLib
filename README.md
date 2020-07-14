@@ -4,7 +4,7 @@ This project is WIP and is trying to build a genuine way to make good 3D visuali
 # Example
 Making a Plot is as easy as you know it from matplotlib or similiar plotting libraries:
 ```
-    from EarthPlot import Earthplot
+    from earthplot import EarthPlot
     plot = EarthPlot(d_light_strength = (.3,.3,.3,1))
     datasize = 10000
     lons2 = np.linspace(0,40,50)
